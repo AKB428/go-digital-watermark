@@ -4,6 +4,7 @@ import (
 	"flag"
 	"fmt"
 	"image"
+	"image/color"
 	"image/jpeg"
 	"image/png"
 	"log"
@@ -59,5 +60,42 @@ func main() {
 	for x := bounds.Min.X; x < bounds.Max.X; x++ {
 		r, g, b, a := img.At(x, 0).RGBA()
 		fmt.Printf("%6d %6d %6d %6d %6d\n", x, r>>8, g>>8, b>>8, a>>8)
+	}
+
+	drawSteganography(img)
+}
+
+func drawSteganography(oimg image.Image) {
+
+	bounds := oimg.Bounds()
+	img := image.NewNRGBA(bounds)
+
+	for y := 0; y < bounds.Max.Y; y++ {
+		for x := 0; x < bounds.Max.X; x++ {
+			r, g, b, a := oimg.At(x, y).RGBA()
+
+			//fmt.Printf("%6d %6d %6d %6d\n", r>>8, g>>8, b>>8, a>>8)
+
+			img.Set(x, y, color.RGBA{
+				R: uint8(r),
+				G: uint8(g),
+				B: uint8(b),
+				A: uint8(a),
+			})
+		}
+	}
+
+	f, err := os.Create("sg.png")
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	if err := png.Encode(f, img); err != nil {
+		f.Close()
+		log.Fatal(err)
+	}
+
+	if err := f.Close(); err != nil {
+		log.Fatal(err)
 	}
 }
