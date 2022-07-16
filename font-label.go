@@ -135,19 +135,24 @@ func main() {
 }
 
 func labelPositionInt(labelPosition string, width int, height int, fontSize int) (int, int) {
-	switch labelPosition {
 
+	bottomHeightPadding := 10
+	upperHeight := fontSize
+	bottomHeight := height - bottomHeightPadding
+
+	leftWidht := 0
+	switch labelPosition {
 	case "UpperLeft":
-		return 0, 0
+		return leftWidht, upperHeight
 	case "UpperRight":
 		// TODO 文字数＊文字サイズで引き算
-		return 0, width - 100
+		return 0, upperHeight
 	case "BottomLeft":
-		return 0, height - 10
+		return leftWidht, bottomHeight
 	case "BottomRight":
 		// TODO 文字数＊文字サイズで引き算
-		return 0, height - 10
+		return 0, bottomHeight
 	default:
-		return 0, fontSize
+		return leftWidht, upperHeight
 	}
 }
