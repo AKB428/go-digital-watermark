@@ -11,3 +11,4 @@ mkmf.log
 /tool/*.csv
 out.png
 go-digital-watermark
+histogram-dw
