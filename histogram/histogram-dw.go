@@ -15,7 +15,12 @@ import (
 func main() {
 
 	var filePath string
+	var detailView bool
+	// 検証用 ファイルをコピーするだけ
+	var copy bool
 	flag.StringVar(&filePath, "f", "", "filePath")
+	flag.BoolVar(&detailView, "d", false, "detailView")
+	flag.BoolVar(&copy, "c", false, "copy")
 	flag.Parse()
 
 	file, err := os.Open(filePath)
@@ -62,6 +67,15 @@ func main() {
 		fmt.Printf("%6d %6d %6d %6d %6d\n", x, r>>8, g>>8, b>>8, a>>8)
 	}
 
+	if detailView {
+		return
+	}
+
+	if copy {
+		copyFile(img)
+		return
+	}
+
 	drawSteganography(img)
 }
 
@@ -72,25 +86,50 @@ func drawSteganography(oimg image.Image) {
 
 	for y := 0; y < bounds.Max.Y; y++ {
 		for x := 0; x < bounds.Max.X; x++ {
-			r, g, b, a := oimg.At(x, y).RGBA()
 
 			//fmt.Printf("%6d %6d %6d %6d\n", r>>8, g>>8, b>>8, a>>8)
 			if y == 0 {
 				// このときに文字列を埋め込む
 				// 文字列分だけ書き込んでbreakで抜ける
-				r = 1
-				g = 2
-				b = 3
-				a = 4
-				//fmt.Printf("%6d %6d %6d %6d %6d %6d\n", x, y, uint8(r), uint8(g), uint8(b), uint8(a))
-			}
 
-			img.Set(x, y, color.RGBA{
-				R: uint8(r),
-				G: uint8(g),
-				B: uint8(b),
-				A: uint8(a),
-			})
+				img.Set(x, y, color.RGBA{
+					R: 12,
+					G: 21,
+					B: 31,
+					A: 255,
+				})
+				//fmt.Printf("%6d %6d %6d %6d %6d %6d\n", x, y, uint8(r), uint8(g), uint8(b), uint8(a))
+			} else {
+				img.Set(x, y, oimg.At(x, y))
+			}
+		}
+	}
+
+	f, err := os.Create("sg.png")
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	if err := png.Encode(f, img); err != nil {
+		f.Close()
+		log.Fatal(err)
+	}
+
+	if err := f.Close(); err != nil {
+		log.Fatal(err)
+	}
+}
+
+func copyFile(oimg image.Image) {
+
+	bounds := oimg.Bounds()
+	img := image.NewNRGBA(bounds)
+
+	for y := 0; y < bounds.Max.Y; y++ {
+		for x := 0; x < bounds.Max.X; x++ {
+
+			img.Set(x, y, oimg.At(x, y))
+
 		}
 	}
 
