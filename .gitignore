@@ -1,0 +1,13 @@
+*.so
+*.o
+*.a
+mkmf.log
+.idea/
+/private/
+*.iml
+.vscode
+/gen/gen
+/tool/sana_client
+/tool/*.csv
+out.png
+go-digital-watermark
