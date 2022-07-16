@@ -13,6 +13,7 @@ import (
 	"log"
 	"os"
 	"strconv"
+	"unicode/utf8"
 
 	"github.com/golang/freetype/truetype"
 	"golang.org/x/image/font"
@@ -22,11 +23,13 @@ import (
 /*
 TODO
 1. ラベルを左下、右下、左上、右上　どれかが選べる
-2. ラベル文字列は引数指定できる
+<ok> 2. ラベル文字列は引数指定できる
 3. フォントの色を指定できる(RGBA)
 4. フォントのサイズを指定できる
 5. 出力ファイル名を指定できる
 6. 出力ファイル拡張子を指定できる
+[エラー処理]
+1. 文字数、フォントサイズ　から許容できる画像サイズ(横縦)をチェックする
 ---
 [AWS]
 7. 出力先をS3にしてOUT URLを返却する
@@ -44,13 +47,19 @@ jepg exif以外？を使う
 ロゴ(画像)ラベル埋め込み
 */
 func main() {
-	const DEFAULT_LABEL = "電子透かしテスト"
+	const DEFAULT_LABEL_TEXT = "電子透かしテスト"
 	fontSize := 30
 	var filePath string
 	var labelPosition string
+	var labelText string
 	flag.StringVar(&filePath, "f", "", "filePath")
 	flag.StringVar(&labelPosition, "p", "", "Label Position")
+	flag.StringVar(&labelText, "t", "", "labelText")
 	flag.Parse()
+
+	if labelText == "" {
+		labelText = DEFAULT_LABEL_TEXT
+	}
 
 	file, err := os.Open(filePath)
 
@@ -101,8 +110,7 @@ func main() {
 	dst := image.NewRGBA(img.Bounds())
 	draw.Draw(dst, dst.Bounds(), img, image.Point{}, draw.Src)
 
-	text := DEFAULT_LABEL
-
+	wordCount := utf8.RuneCountInString(labelText)
 	col := color.RGBA{00, 00, 00, 120}
 
 	opt := truetype.Options{
@@ -110,7 +118,7 @@ func main() {
 	}
 	face := truetype.NewFace(ft, &opt)
 
-	x, y := labelPositionInt(labelPosition, config.Width, config.Height, fontSize)
+	x, y := labelPositionInt(labelPosition, config.Width, config.Height, fontSize, wordCount)
 	dot := fixed.Point26_6{X: fixed.Int26_6(x * 64), Y: fixed.Int26_6(y * 64)}
 	fmt.Println(dot)
 
@@ -120,7 +128,7 @@ func main() {
 		Face: face,
 		Dot:  dot,
 	}
-	d.DrawString(text)
+	d.DrawString(labelText)
 
 	newFile, err := os.Create("out.png")
 	if err != nil {
@@ -134,24 +142,24 @@ func main() {
 	}
 }
 
-func labelPositionInt(labelPosition string, width int, height int, fontSize int) (int, int) {
+func labelPositionInt(labelPosition string, width int, height int, fontSize int, wordCount int) (int, int) {
 
 	bottomHeightPadding := 10
 	upperHeight := fontSize
 	bottomHeight := height - bottomHeightPadding
 
 	leftWidht := 0
+	rightWidht := width - (wordCount * fontSize)
+
 	switch labelPosition {
 	case "UpperLeft":
 		return leftWidht, upperHeight
 	case "UpperRight":
-		// TODO 文字数＊文字サイズで引き算
-		return 0, upperHeight
+		return rightWidht, upperHeight
 	case "BottomLeft":
 		return leftWidht, bottomHeight
 	case "BottomRight":
-		// TODO 文字数＊文字サイズで引き算
-		return 0, bottomHeight
+		return rightWidht, bottomHeight
 	default:
 		return leftWidht, upperHeight
 	}
