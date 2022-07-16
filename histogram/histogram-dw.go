@@ -75,6 +75,15 @@ func drawSteganography(oimg image.Image) {
 			r, g, b, a := oimg.At(x, y).RGBA()
 
 			//fmt.Printf("%6d %6d %6d %6d\n", r>>8, g>>8, b>>8, a>>8)
+			if y == 0 {
+				// このときに文字列を埋め込む
+				// 文字列分だけ書き込んでbreakで抜ける
+				r = 1
+				g = 2
+				b = 3
+				a = 4
+				//fmt.Printf("%6d %6d %6d %6d %6d %6d\n", x, y, uint8(r), uint8(g), uint8(b), uint8(a))
+			}
 
 			img.Set(x, y, color.RGBA{
 				R: uint8(r),
