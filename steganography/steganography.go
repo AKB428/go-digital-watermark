@@ -16,11 +16,6 @@ import (
  RGB値を変更するため元画像は多少劣化する。ただし透かしの判別は難しい。
 */
 
-// TODO
-// 関数のimageはポインタわたしにする encode decode
-// encode関数は　書き換える前のもとのバイナリ値をprintする
-// main関数でファイルを２回ひらくのを１回にする
-
 func main() {
 
 	var filePath string
@@ -41,26 +36,28 @@ func main() {
 	if err != nil {
 		log.Fatalf("failed to open file: %s", err.Error())
 	}
-	defer file.Close()
+
 	config, format, err := image.DecodeConfig(file)
 	if err != nil {
 		log.Fatal(err)
 	}
+	// 一度ファイルを閉じておかないと後続でエラーになる
+	file.Close()
 
 	//フォーマット名表示
 	fmt.Println("画像フォーマット：" + format)
 	//サイズ表示
 	fmt.Println("横幅=" + strconv.Itoa(config.Width) + ", 縦幅=" + strconv.Itoa(config.Height))
 
-	file2, err := os.Open(filePath)
+	file, err = os.Open(filePath)
 	if err != nil {
 		log.Fatalf("failed to open file: %s", err.Error())
 	}
-	defer file2.Close()
+	defer file.Close()
 
 	var img image.Image
 	if format == "png" {
-		img, err = png.Decode(file2)
+		img, err = png.Decode(file)
 		if err != nil {
 			log.Fatalf("failed to decode image: %s", err.Error())
 		}
@@ -109,11 +106,13 @@ func drawSteganography(oimg image.Image, text string) {
 		for x := 0; x < bounds.Max.X; x++ {
 
 			if y == 0 {
-				// このときに文字列を埋め込む
-				// 文字列分だけ書き込んでbreakで抜ける
+				// y座標が0の場合に文字列を埋め込む、指定された文字数分だけ処理
 				// 最後は0x00 0x00 0x00で終端する
 				if bc >= counter || bc%3 != 0 && bc >= counter-3 {
 					// fmt.Printf("%d : %d\n", bc, counter)
+
+					or, og, ob, oa := oimg.At(x, y).RGBA()
+					fmt.Printf("%4d %4d %4d %4d %4d\n", x, or>>8, og>>8, ob>>8, oa>>8)
 
 					color := color.RGBA{
 						R: alignment(b, bc, counter),
@@ -121,7 +120,6 @@ func drawSteganography(oimg image.Image, text string) {
 						B: alignment(b, bc, counter+2),
 						A: 255, //A値は255で固定、RGB値に依存するため任意の値を入れるとRGB値が壊れる
 					}
-					//fmt.Printf("%d %d %d %d\n", color.R, color.G, color.B, color.A)
 					img.Set(x, y, color)
 					counter += 3
 
@@ -201,7 +199,7 @@ func decodeSteganography(img image.Image, config image.Config) string {
 		bb := i32tob(b)
 		ab := i32tob(a)
 
-		fmt.Printf("%d %d %d %d %d\n", x, rb[1], gb[1], bb[1], ab[1])
+		fmt.Printf("%4d %4d %4d %4d %4d\n", x, rb[1], gb[1], bb[1], ab[1])
 
 		textb = append(textb, rb[1], gb[1], bb[1])
 
