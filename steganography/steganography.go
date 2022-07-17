@@ -196,7 +196,6 @@ func decodeSteganography(img image.Image, config image.Config) string {
 		bb := i32tob(b)
 		ab := i32tob(a)
 
-		//fmt.Printf("%d %x %x %x %x\n", x, r, g, b, a)
 		fmt.Printf("%d %d %d %d %d\n", x, rb[1], gb[1], bb[1], ab[1])
 
 		textb = append(textb, rb[1], gb[1], bb[1])
