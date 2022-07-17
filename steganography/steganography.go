@@ -16,6 +16,11 @@ import (
  RGB値を変更するため元画像は多少劣化する。ただし透かしの判別は難しい。
 */
 
+// TODO
+// 関数のimageはポインタわたしにする encode decode
+// encode関数は　書き換える前のもとのバイナリ値をprintする
+// main関数でファイルを２回ひらくのを１回にする
+
 func main() {
 
 	var filePath string
