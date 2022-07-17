@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"image"
 	"image/color"
-	"image/jpeg"
 	"image/png"
 	"log"
 	"os"
@@ -13,7 +12,9 @@ import (
 )
 
 /*
- */
+ 指定した画像ファイルにテキスト文字列を透かしで入れるプログラム
+ RGB値を変更するため元画像は多少劣化する。ただし透かしの判別は難しい。
+*/
 
 func main() {
 
@@ -21,9 +22,8 @@ func main() {
 	var embeddedText string
 	var detailView bool
 	var decode bool
-	// 検証用 ファイルをコピーするだけ
 	var copy bool
-	flag.BoolVar(&copy, "c", false, "copy")
+	flag.BoolVar(&copy, "c", false, "プログラム検証用　ファイルをコピーするだけ")
 	flag.BoolVar(&decode, "d", false, "decode")
 	flag.StringVar(&filePath, "f", "", "filePath")
 	flag.StringVar(&embeddedText, "t", "", "embedded Text 100文字まで")
@@ -60,23 +60,19 @@ func main() {
 			log.Fatalf("failed to decode image: %s", err.Error())
 		}
 	} else if format == "jpeg" {
-		img, err = jpeg.Decode(file2)
-		if err != nil {
-			log.Fatalf("failed to decode image: %s", err.Error())
-		}
+		log.Fatalf("JPEG画像には現在未対応です")
 	} else {
-		log.Fatalf("failed to decode image: %s", err.Error())
+		log.Fatalf("対応している画像フォーマットではありません")
 	}
 
 	if decode {
-		decodeSteganography(img, config)
+		decodeText := decodeSteganography(img, config)
+		fmt.Println(decodeText)
 		return
 	}
 
 	if detailView {
-		// https://pkg.go.dev/image#Paletted.At
 		bounds := img.Bounds()
-
 		for x := bounds.Min.X; x < bounds.Max.X; x++ {
 			r, g, b, a := img.At(x, 0).RGBA()
 			fmt.Printf("%6d %6d %6d %6d %6d\n", x, r>>8, g>>8, b>>8, a>>8)
@@ -107,20 +103,18 @@ func drawSteganography(oimg image.Image, text string) {
 	for y := 0; y < bounds.Max.Y; y++ {
 		for x := 0; x < bounds.Max.X; x++ {
 
-			//fmt.Printf("%6d %6d %6d %6d\n", r>>8, g>>8, b>>8, a>>8)
 			if y == 0 {
 				// このときに文字列を埋め込む
 				// 文字列分だけ書き込んでbreakで抜ける
 				// 最後は0x00 0x00 0x00で終端する
-
 				if bc >= counter || bc%3 != 0 && bc >= counter-3 {
-					fmt.Printf("%d : %d\n", bc, counter)
+					// fmt.Printf("%d : %d\n", bc, counter)
 
 					color := color.RGBA{
 						R: alignment(b, bc, counter),
 						G: alignment(b, bc, counter+1),
 						B: alignment(b, bc, counter+2),
-						A: 255,
+						A: 255, //A値は255で固定、RGB値に依存するため任意の値を入れるとRGB値が壊れる
 					}
 					fmt.Printf("%d %d %d %d\n", color.R, color.G, color.B, color.A)
 					img.Set(x, y, color)
@@ -129,7 +123,6 @@ func drawSteganography(oimg image.Image, text string) {
 				} else {
 					img.Set(x, y, oimg.At(x, y))
 				}
-				//fmt.Printf("%6d %6d %6d %6d %6d %6d\n", x, y, uint8(r), uint8(g), uint8(b), uint8(a))
 			} else {
 				img.Set(x, y, oimg.At(x, y))
 			}
@@ -189,12 +182,10 @@ func alignment(b []byte, len int, counter int) uint8 {
 	}
 }
 
-func decodeSteganography(img image.Image, config image.Config) {
+func decodeSteganography(img image.Image, config image.Config) string {
+	textb := []byte{}
 	for x := 0; x < config.Width; x++ {
 		r, g, b, a := img.At(x, 0).RGBA()
-		fmt.Printf("%d %x %x %x %x\n", x, r, g, b, a)
-		fmt.Printf("%d %d %d %d %d\n", x, r, g, b, a)
-		//var data []byte
 
 		r8 := r >> 8
 		g8 := g >> 8
@@ -205,19 +196,17 @@ func decodeSteganography(img image.Image, config image.Config) {
 		bb := i32tob(b)
 		ab := i32tob(a)
 
-		fmt.Println(rb[1])
-		fmt.Println(gb[1])
-		fmt.Println(bb[1])
-		fmt.Println(ab[1])
+		//fmt.Printf("%d %x %x %x %x\n", x, r, g, b, a)
+		fmt.Printf("%d %d %d %d %d\n", x, rb[1], gb[1], bb[1], ab[1])
 
-		slice := []byte{rb[1], gb[1], bb[1]}
+		textb = append(textb, rb[1], gb[1], bb[1])
 
-		fmt.Println(string(slice))
 		// 処理終端
 		if r8 == 0 && g8 == 0 && b8 == 0 {
 			break
 		}
 	}
+	return string(textb)
 }
 
 func i32tob(val uint32) []byte {
