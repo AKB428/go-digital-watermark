@@ -111,15 +111,21 @@ func drawSteganography(oimg image.Image, text string) {
 			if y == 0 {
 				// このときに文字列を埋め込む
 				// 文字列分だけ書き込んでbreakで抜ける
-				// 最後は0x00 0x00 0x00 0x00で終端する
-				if bc >= counter {
-					img.Set(x, y, color.RGBA{
+				// 最後は0x00 0x00 0x00で終端する
+
+				if bc >= counter || bc%3 != 0 && bc >= counter-3 {
+					fmt.Printf("%d : %d\n", bc, counter)
+
+					color := color.RGBA{
 						R: alignment(b, bc, counter),
 						G: alignment(b, bc, counter+1),
 						B: alignment(b, bc, counter+2),
-						A: alignment(b, bc, counter+3),
-					})
-					counter += 4
+						A: 255,
+					}
+					fmt.Printf("%d %d %d %d\n", color.R, color.G, color.B, color.A)
+					img.Set(x, y, color)
+					counter += 3
+
 				} else {
 					img.Set(x, y, oimg.At(x, y))
 				}
@@ -176,6 +182,7 @@ func copyFile(oimg image.Image) {
 func alignment(b []byte, len int, counter int) uint8 {
 
 	if counter < len {
+		fmt.Printf("%d\n", uint8(b[counter]))
 		return uint8(b[counter])
 	} else {
 		return 0
@@ -185,14 +192,13 @@ func alignment(b []byte, len int, counter int) uint8 {
 func decodeSteganography(img image.Image, config image.Config) {
 	for x := 0; x < config.Width; x++ {
 		r, g, b, a := img.At(x, 0).RGBA()
-		//fmt.Printf("%6d %6d %6d %6d %6d\n", x, r>>8, g>>8, b>>8, a>>8)
-
+		fmt.Printf("%d %x %x %x %x\n", x, r, g, b, a)
+		fmt.Printf("%d %d %d %d %d\n", x, r, g, b, a)
 		//var data []byte
 
 		r8 := r >> 8
 		g8 := g >> 8
 		b8 := b >> 8
-		a8 := a >> 8
 
 		rb := i32tob(r)
 		gb := i32tob(g)
@@ -204,11 +210,11 @@ func decodeSteganography(img image.Image, config image.Config) {
 		fmt.Println(bb[1])
 		fmt.Println(ab[1])
 
-		slice := []byte{rb[1], gb[1], bb[1], ab[1]}
+		slice := []byte{rb[1], gb[1], bb[1]}
 
 		fmt.Println(string(slice))
 		// 処理終端
-		if r8 == 0 && g8 == 0 && b8 == 0 && a8 == 00 {
+		if r8 == 0 && g8 == 0 && b8 == 0 {
 			break
 		}
 	}
