@@ -116,7 +116,7 @@ func drawSteganography(oimg image.Image, text string) {
 						B: alignment(b, bc, counter+2),
 						A: 255, //A値は255で固定、RGB値に依存するため任意の値を入れるとRGB値が壊れる
 					}
-					fmt.Printf("%d %d %d %d\n", color.R, color.G, color.B, color.A)
+					//fmt.Printf("%d %d %d %d\n", color.R, color.G, color.B, color.A)
 					img.Set(x, y, color)
 					counter += 3
 
@@ -175,7 +175,7 @@ func copyFile(oimg image.Image) {
 func alignment(b []byte, len int, counter int) uint8 {
 
 	if counter < len {
-		fmt.Printf("%d\n", uint8(b[counter]))
+		//fmt.Printf("%d\n", uint8(b[counter]))
 		return uint8(b[counter])
 	} else {
 		return 0
