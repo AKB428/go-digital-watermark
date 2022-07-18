@@ -9,7 +9,8 @@ import (
 
 	"image/draw"
 	"image/jpeg"
-	"image/png"
+	_ "image/jpeg"
+	_ "image/png"
 )
 
 func main() {
@@ -34,11 +35,11 @@ func main() {
 	}
 	defer logoFile.Close()
 
-	originImg, err := png.Decode(originFile)
+	originImg, _, err := image.Decode(originFile)
 	if err != nil {
 		log.Fatalf("failed to decode image: %s", err.Error())
 	}
-	logoImg, err := png.Decode(logoFile)
+	logoImg, _, err := image.Decode(logoFile)
 	if err != nil {
 		log.Fatalf("failed to decode image: %s", err.Error())
 	}
