@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"image"
 	"image/color"
+	_ "image/jpeg"
 	"image/png"
 	"log"
 	"os"
@@ -23,61 +24,44 @@ func main() {
 	var detailView bool
 	var decode bool
 	var copy bool
-	flag.BoolVar(&copy, "c", false, "プログラム検証用　ファイルをコピーするだけ")
+	flag.BoolVar(&copy, "c", false, "プログラム検証用　rgb copy")
 	flag.BoolVar(&decode, "d", false, "decode")
 	flag.StringVar(&filePath, "f", "", "filePath")
-	flag.StringVar(&embeddedText, "t", "", "embedded Text 100文字まで")
+	flag.StringVar(&embeddedText, "t", "", "embedded Text [max = image width * 3byte]")
 	flag.BoolVar(&detailView, "v", false, "detailView")
 
 	flag.Parse()
 
 	file, err := os.Open(filePath)
-
-	if err != nil {
-		log.Fatalf("failed to open file: %s", err.Error())
-	}
-
-	config, format, err := image.DecodeConfig(file)
-	if err != nil {
-		log.Fatal(err)
-	}
-	// 一度ファイルを閉じておかないと後続でエラーになる
-	file.Close()
-
-	//フォーマット名表示
-	fmt.Println("画像フォーマット：" + format)
-	//サイズ表示
-	fmt.Println("横幅=" + strconv.Itoa(config.Width) + ", 縦幅=" + strconv.Itoa(config.Height))
-
-	file, err = os.Open(filePath)
 	if err != nil {
 		log.Fatalf("failed to open file: %s", err.Error())
 	}
 	defer file.Close()
+	img, format, err := image.Decode(file)
+	if err != nil {
+		log.Fatalf("failed to decode image: %s", err.Error())
+	}
+	//フォーマット名表示
+	fmt.Println("画像フォーマット：" + format)
+	//サイズ表示
+	point := img.Bounds().Size()
+	fmt.Println("横幅=" + strconv.Itoa(point.X) + ", 縦幅=" + strconv.Itoa(point.Y))
 
-	var img image.Image
-	if format == "png" {
-		img, err = png.Decode(file)
-		if err != nil {
-			log.Fatalf("failed to decode image: %s", err.Error())
-		}
-	} else if format == "jpeg" {
-		log.Fatalf("JPEG画像には現在未対応です")
-	} else {
+	if format != "png" {
 		log.Fatalf("対応している画像フォーマットではありません")
 	}
 
 	if decode {
-		decodeText := decodeSteganography(img, config)
+		decodeText := decodeSteganography(img, point.X)
 		fmt.Println(decodeText)
 		return
 	}
 
 	if detailView {
-		bounds := img.Bounds()
-		for x := bounds.Min.X; x < bounds.Max.X; x++ {
+		fmt.Printf("%8s %6s %6s %6s %6s\n", "[x,y=0]", "R", "G", "B", "A")
+		for x := 0; x < point.X; x++ {
 			r, g, b, a := img.At(x, 0).RGBA()
-			fmt.Printf("%6d %6d %6d %6d %6d\n", x, r>>8, g>>8, b>>8, a>>8)
+			fmt.Printf("%8d %6d %6d %6d %6d\n", x+1, r>>8, g>>8, b>>8, a>>8)
 		}
 		return
 	}
@@ -97,11 +81,12 @@ func drawSteganography(oimg image.Image, text string) {
 
 	b := []byte(text)
 	fmt.Println(b)
-	fmt.Println(len(b))
+	fmt.Printf("input text byte %d\n", len(b))
 
 	bc := len(b)
 	var counter int
-
+	fmt.Println("Original Data")
+	fmt.Printf("%8s %6s %6s %6s %6s\n", "[x,y=0]", "R", "G", "B", "A")
 	for y := 0; y < bounds.Max.Y; y++ {
 		for x := 0; x < bounds.Max.X; x++ {
 
@@ -112,7 +97,7 @@ func drawSteganography(oimg image.Image, text string) {
 					// fmt.Printf("%d : %d\n", bc, counter)
 
 					or, og, ob, oa := oimg.At(x, y).RGBA()
-					fmt.Printf("%4d %4d %4d %4d %4d\n", x, or>>8, og>>8, ob>>8, oa>>8)
+					fmt.Printf("%8d %6d %6d %6d %6d\n", x+1, or>>8, og>>8, ob>>8, oa>>8)
 
 					color := color.RGBA{
 						R: alignment(b, bc, counter),
@@ -178,16 +163,17 @@ func copyFile(oimg image.Image) {
 func alignment(b []byte, len int, counter int) uint8 {
 
 	if counter < len {
-		//fmt.Printf("%d\n", uint8(b[counter]))
 		return uint8(b[counter])
 	} else {
 		return 0
 	}
 }
 
-func decodeSteganography(img image.Image, config image.Config) string {
+func decodeSteganography(img image.Image, width int) string {
 	textb := []byte{}
-	for x := 0; x < config.Width; x++ {
+	fmt.Printf("%8s %6s %6s %6s %6s\n", "[x,y=0]", "R", "G", "B", "A")
+
+	for x := 0; x < width; x++ {
 		r, g, b, a := img.At(x, 0).RGBA()
 
 		r8 := r >> 8
@@ -199,7 +185,7 @@ func decodeSteganography(img image.Image, config image.Config) string {
 		bb := i32tob(b)
 		ab := i32tob(a)
 
-		fmt.Printf("%4d %4d %4d %4d %4d\n", x, rb[1], gb[1], bb[1], ab[1])
+		fmt.Printf("%8d %6d %6d %6d %6d\n", x+1, rb[1], gb[1], bb[1], ab[1])
 
 		textb = append(textb, rb[1], gb[1], bb[1])
 
