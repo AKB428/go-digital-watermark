@@ -6,19 +6,13 @@ import (
 	"image"
 	"log"
 	"os"
+	"path/filepath"
+	"strings"
 
 	"image/draw"
 	"image/jpeg"
-	_ "image/jpeg"
 	"image/png"
-	_ "image/png"
 )
-
-/*TODO
-1. ロゴの位置が指定できる 4箇所
-2. 出力フォルダーが指定できる
-3. ファイル名を加工する(オリジナルファイル名+"文字列")にする
-*/
 
 func main() {
 
@@ -26,10 +20,12 @@ func main() {
 	var logoImagePath string
 	var outFolderPath string
 	var logoPosition string
+	var useOriginalFilename bool
 	flag.StringVar(&oImageFilePath, "f", "", "originalImageFilePath")
 	flag.StringVar(&logoImagePath, "l", "", "logoImagePath")
 	flag.StringVar(&outFolderPath, "o", "", "outFolderPath")
 	flag.StringVar(&logoPosition, "p", "", "TopLeft | TopRight | BottomLeft | BottomRight ")
+	flag.BoolVar(&useOriginalFilename, "u", false, "出力ファイル名にオリジナルファイル名を使う")
 	flag.Parse()
 
 	originFile, err := os.Open(oImageFilePath)
@@ -67,11 +63,10 @@ func main() {
 
 	rgba := image.NewRGBA(originRectangle)
 	draw.Draw(rgba, originRectangle, originImg, image.Point{0, 0}, draw.Src)
-
 	draw.Draw(rgba, logoRectangle, logoImg, image.Point{0, 0}, draw.Over)
 
 	if format == "jpeg" {
-		out, err := os.Create("logo-watermark.jpg")
+		out, err := os.Create(outFilePath(oImageFilePath, "jpg", outFolderPath, useOriginalFilename))
 		if err != nil {
 			fmt.Println(err)
 		}
@@ -81,7 +76,7 @@ func main() {
 
 		jpeg.Encode(out, rgba, &opt)
 	} else {
-		out, err := os.Create("logo-watermark.png")
+		out, err := os.Create(outFilePath(oImageFilePath, "png", oImageFilePath, useOriginalFilename))
 		if err != nil {
 			fmt.Println(err)
 		}
@@ -109,4 +104,26 @@ func positionInt(position string, w int, h int, lw int, lh int) (int, int) {
 		// TopLeftをデフォルトとする
 		return xLeft, yTop
 	}
+}
+
+func outFilePath(oFilePath string, ext string, outFolder string, useOfn bool) string {
+	const defaultFileName = "logo-watermark"
+	const addFileName = "-lw"
+	var filaneme string
+
+	if useOfn {
+		ext := filepath.Ext(oFilePath)
+		pf := strings.TrimSuffix(filepath.Base(oFilePath), ext)
+
+		filaneme = pf + addFileName
+	} else {
+		filaneme = defaultFileName
+	}
+
+	if outFolder == "" {
+		return filaneme + "." + ext
+	} else {
+		return filepath.Join(outFolder, filaneme+"."+ext)
+	}
+
 }
