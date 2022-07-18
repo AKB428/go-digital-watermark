@@ -27,9 +27,9 @@ func main() {
 	var logoPosition string
 	var useOriginalFilename bool
 	flag.StringVar(&oImageFilePath, "f", "", "originalImageFilePath")
-	flag.StringVar(&logoImagePath, "l", "", "logoImagePath")
+	flag.StringVar(&logoImagePath, "l", "", "logoImageFilePath")
 	flag.StringVar(&outFolderPath, "o", "", "outFolderPath")
-	flag.StringVar(&logoPosition, "p", "", "TopLeft | TopRight | BottomLeft | BottomRight ")
+	flag.StringVar(&logoPosition, "p", "", "TopLeft | TopRight | BottomLeft | BottomRight | Center")
 	flag.BoolVar(&useOriginalFilename, "u", false, "出力ファイル名にオリジナルファイル名を使う")
 	flag.Parse()
 
@@ -112,6 +112,10 @@ func positionInt(position string, w int, h int, lw int, lh int) (int, int) {
 		return xLeft, ybottom
 	case "BottomRight":
 		return xRight, ybottom
+	case "Center":
+		cx, cy := w/2, h/2
+		clx, cly := lw/2, lh/2
+		return cx - clx, cy - cly
 	default:
 		// TopLeftをデフォルトとする
 		return xLeft, yTop

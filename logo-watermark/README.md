@@ -7,6 +7,21 @@
 ```
 go build -o ./bin/logo-watermark logo-watermark/logo-watermark.go
 ```
+## HELP
+
+```
+./bin/logo-watermark -h
+Usage of ./bin/logo-watermark:
+  -f string
+    	originalImageFilePath
+  -l string
+    	logoImageFilePath
+  -o string
+    	outFolderPath
+  -p string
+    	TopLeft | TopRight | BottomLeft | BottomRight | Center
+  -u	出力ファイル名にオリジナルファイル名を使う
+```
 
 ## 実行
 
