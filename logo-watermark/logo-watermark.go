@@ -85,7 +85,7 @@ func main() {
 		}
 
 	} else {
-		out, err := os.Create(outFilePath(oImageFilePath, "png", oImageFilePath, useOriginalFilename))
+		out, err := os.Create(outFilePath(oImageFilePath, "png", outFolderPath, useOriginalFilename))
 		if err != nil {
 			fmt.Println(err)
 		}
