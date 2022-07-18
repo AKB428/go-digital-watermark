@@ -14,5 +14,7 @@ go build -o ./bin/logo-watermark logo-watermark/logo-watermark.go
 ./bin/logo-watermark -f ./image/photo-jpeg.jpg -l ./image/logo-sample2.png
 ```
 
-
+```
+./bin/logo-watermark -f ./image/photo-hiziribashi.png -l ./image/logo-sample2.png
+```
 
