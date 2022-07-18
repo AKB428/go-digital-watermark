@@ -14,6 +14,11 @@ import (
 	"image/png"
 )
 
+/*
+TODO
+1.ロゴの透明値を指定できる
+2.ポジションにセンターを追加
+*/
 func main() {
 
 	var oImageFilePath string
@@ -74,13 +79,20 @@ func main() {
 		var opt jpeg.Options
 		opt.Quality = 80
 
-		jpeg.Encode(out, rgba, &opt)
+		err = jpeg.Encode(out, rgba, &opt)
+		if err != nil {
+			log.Fatalf("failed to encode image: %s", err.Error())
+		}
+
 	} else {
 		out, err := os.Create(outFilePath(oImageFilePath, "png", oImageFilePath, useOriginalFilename))
 		if err != nil {
 			fmt.Println(err)
 		}
-		png.Encode(out, rgba)
+		err = png.Encode(out, rgba)
+		if err != nil {
+			log.Fatalf("failed to encode image: %s", err.Error())
+		}
 	}
 }
 
