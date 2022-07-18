@@ -20,6 +20,9 @@ ABCDE -> x,y=[1,0][2,0]を書き換え (5byte)
 ABCDEFG -> x,y=[1,0][2,0][3,0]を書き換え (7byte)
 
 
+![stg-explanation](doc/stg-explanation.png "stg-explanation.png")
+
+
 ### 実行ファイルビルド
 
 ```
