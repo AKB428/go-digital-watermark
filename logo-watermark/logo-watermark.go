@@ -10,6 +10,7 @@ import (
 	"image/draw"
 	"image/jpeg"
 	_ "image/jpeg"
+	"image/png"
 	_ "image/png"
 )
 
@@ -35,7 +36,7 @@ func main() {
 	}
 	defer logoFile.Close()
 
-	originImg, _, err := image.Decode(originFile)
+	originImg, format, err := image.Decode(originFile)
 	if err != nil {
 		log.Fatalf("failed to decode image: %s", err.Error())
 	}
@@ -53,13 +54,21 @@ func main() {
 	draw.Draw(rgba, originRectangle, originImg, image.Point{0, 0}, draw.Src)
 	draw.Draw(rgba, logoRectangle, logoImg, image.Point{0, 0}, draw.Over)
 
-	out, err := os.Create("logo-watermark.jpg")
-	if err != nil {
-		fmt.Println(err)
+	if format == "jpeg" {
+		out, err := os.Create("logo-watermark.jpg")
+		if err != nil {
+			fmt.Println(err)
+		}
+
+		var opt jpeg.Options
+		opt.Quality = 80
+
+		jpeg.Encode(out, rgba, &opt)
+	} else {
+		out, err := os.Create("logo-watermark.png")
+		if err != nil {
+			fmt.Println(err)
+		}
+		png.Encode(out, rgba)
 	}
-
-	var opt jpeg.Options
-	opt.Quality = 80
-
-	jpeg.Encode(out, rgba, &opt)
 }
